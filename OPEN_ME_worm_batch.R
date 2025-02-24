@@ -1,0 +1,30 @@
+#replace with file path to directory with input, output, and R code folders
+setwd("filepath")
+
+
+#indicate names of three subdirectories: input has all images, output will house analyzed images, R code has findWormz and analyzeWormz
+rcode_folder <- file.path(".", "R code")
+image_folder <- file.path(".", "input")  # all the tifs are here
+output_folder <- file.path(".", "output")   # relative to wd
+
+#the conditions map file should be in the input folder, and called conditions_map.csv
+conditions_map_filename <- file.path(image_folder, "conditions_map.csv")
+
+#load the findWormz and analyzeWormz functions
+source(file.path(rcode_folder, "findWormz.R"))
+source(file.path(rcode_folder, "analyzeWormz.R"))
+
+#run analyzeWormz
+analyzeWormz(image_folder, output_folder, conditions_map_filename,
+             troubleshootMode = FALSE, # set to TRUE for add intermediate images (good for troubleshooting)
+             lightBackground = TRUE,
+             threshold = "auto",
+             thresholdAdjust = 1.18,
+             fillNumPix = 0,
+             cleanNumPix = 0,
+             keepNumPix = 2000,
+             worminess_min_thr = 1.4,
+             worminess_max_thr = 2.7,
+             blurSigma = 2,
+             backgroundCorrect = TRUE,
+             showPlots = FALSE)  
