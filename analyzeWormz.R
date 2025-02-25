@@ -1,4 +1,4 @@
-analyzeWormz <- function(imageFolder, outputFolder, conditionsMapFile, 
+analyzeWormz <- function(imageFolder, outputFolder, conditionsMapFile, brightfield_channel, fluorescent_channel,
                          troubleshootMode = FALSE,  # if true additional intermediate images are saved to troubleshoot
                          lightBackground = TRUE,    # findWormz() parameters...
                          threshold = "auto",
@@ -33,7 +33,7 @@ analyzeWormz <- function(imageFolder, outputFolder, conditionsMapFile,
   # z is the channel (visible light = 0, fluorescent = 1)
   
   filenames <- Sys.glob(file.path(imageFolder, "*.tif"))
-  filenames <- filenames[str_which(filenames, "ch00")]  # grab just the ch00 channels
+  filenames <- filenames[str_which(filenames, brightfield_channel)]  # grab just the brightfield channels
   
   #create a dataframe with analysis output
   names_analysis_output<- c("filename", "worm_number","condition_code",
@@ -81,7 +81,9 @@ analyzeWormz <- function(imageFolder, outputFolder, conditionsMapFile,
       
       
       # construct filename of fluorescent image data
-      fname_data_image <- paste0(str_sub(fname_root, start = 1, end = -3), "01.", fname_extn) # extract all but last two characters (which should be "00"), replace with "01"
+
+      #locate the position in the filename root indicating the channel is brightfield and replace with the fluorescent image designation
+      fname_data_image <- str_replace(fname_basename, brightfield_channel, fluorescent_channel)
       worm_data <- readTIFF(file.path(imageFolder, fname_data_image))
       condition <- str_match(fname_root, "(C\\d+)_")[,2]  # condition looks like _C1234_ in filename
       
