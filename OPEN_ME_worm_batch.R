@@ -1,6 +1,9 @@
 #replace with file path to directory with input, output, and R code folders
 setwd("filepath")
 
+#replace with the name at the end of your brightfield channel and fluorescent channel images
+brightfield_channel <- "_ch00"
+fluorescent_channel <- "_ch01"
 
 #indicate names of three subdirectories: input has all images, output will house analyzed images, R code has findWormz and analyzeWormz
 rcode_folder <- file.path(".", "R code")
@@ -15,7 +18,7 @@ source(file.path(rcode_folder, "findWormz.R"))
 source(file.path(rcode_folder, "analyzeWormz.R"))
 
 #run analyzeWormz
-analyzeWormz(image_folder, output_folder, conditions_map_filename,
+analyzeWormz(image_folder, output_folder, conditions_map_filename, brightfield_channel, fluorescent_channel,
              troubleshootMode = FALSE, # set to TRUE for add intermediate images (good for troubleshooting)
              lightBackground = TRUE,
              threshold = "auto",
