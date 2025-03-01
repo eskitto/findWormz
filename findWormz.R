@@ -9,7 +9,6 @@
 # returns NULL if no worms are found
 findWormz <- function(
   filename,
-  lightBackground = TRUE,      # dark worms on light background is default
   threshold       = "auto",    # imager::threshold parameter
   thresholdAdjust = 1,         # imager::threshold parameter
   fillNumPix      = 0,         # parameter for imager::fill,  would use 1-5 here if needed
@@ -65,7 +64,7 @@ findWormz <- function(
     ) %>% 
     as.pixset() 
   
-  if (lightBackground) px <- !px
+  px <- !px
   
   # fill then clean to fill in some holes inside worms, eliminate some specks
   if (fillNumPix > 0 || cleanNumPix > 0) {

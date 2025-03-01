@@ -52,7 +52,6 @@ analyzeWormz <- function(imageFolder, outputFolder, conditionsMapFile, brightfie
     
     cat("\nAnalyzing", fname, "\n")
     results <- findWormz(fname,
-                         lightBackground,
                          threshold,
                          thresholdAdjust,
                          fillNumPix,
