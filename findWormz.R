@@ -3,21 +3,23 @@
 #
 # return value is a list with three objects:
 #      * final.worms is a list of masks of the pixels, one for each worm candidate
-#      * worm_imgs a list of worm images taken along the way (5 total)
+#      * worm_imgs is a list of intermediate images representing each step of the image processing pipeline (5 total)
 #      * stats = dataframe of statistics with one row for each final.worm in the image
+#
+# returns NULL if no worms are found
 findWormz <- function(
   filename,
-  lightBackground = TRUE,  # dark worms on light background is default
-  threshold       = "auto",
-  thresholdAdjust = 1,
-  fillNumPix      = 0, # would use 1-5 here if needed
-  cleanNumPix     = 0, # would use 1-5 here if needed
-  keepNumPix      = 700,   # throw away small objects
-  worminess_min_thr   = 1.35,  # threshold for perimeter to area ratio where 1 = square worm
-  worminess_max_thr   = 2.05,
-  blurSigma       = 2.0,  # used by isoblur
-  backgroundCorrect = TRUE,
-  showPlots = TRUE
+  lightBackground = TRUE,      # dark worms on light background is default
+  threshold       = "auto",    # imager::threshold parameter
+  thresholdAdjust = 1,         # imager::threshold parameter
+  fillNumPix      = 0,         # parameter for imager::fill,  would use 1-5 here if needed
+  cleanNumPix     = 0,         # parameter for imager::clean, would use 1-5 here if needed
+  keepNumPix      = 700,       # throw away small objects (ie too few pixels)
+  worminess_min_thr   = 1.35,  # "not thin enough" threshold 
+  worminess_max_thr   = 2.05,  # "too thin" threshold
+  blurSigma       = 2.0,       # used by imager::isoblur
+  backgroundCorrect = TRUE,    # if TRUE call imagerExtra::SPE for contrast enhancement and to improve non-uniform lighting
+  showPlots = TRUE             # show intermediate plots, helpful for debugging, slows down process
 ) {
   
   library(imager)
@@ -27,8 +29,9 @@ findWormz <- function(
   library(colorspace)
   library(tools)
   library(tiff)
+  library(dplyr)
   
-  extn <- str_to_lower(file_ext(filename))
+  extn <- tolower(file_ext(filename))
   if (extn == "tif") {
     im <- as.cimg(readTIFF(filename))
   } else if (extn == "jpg") {
@@ -40,21 +43,23 @@ findWormz <- function(
   
   if (dim(im)[4] > 1) im  <- grayscale(im) # dim 4 stores color channels, only convert to grayscale if needed
   
-  im.final <- im  # will be plotted at the end (possibly with colored worms)
-  final.worms <- NULL # list of worm pixsets if any worms found
+  im.final <- im      # save original grayscale image to be be plotted at the end (with colored worms overlay)
+  final.worms <- NULL # will store list of worm pixsets if any worms found
   
-  # small "background" correction (can create artifacts if too large lambda)
+  
+  # Small "background" correction (can create artifacts if too large lambda).
+  # Improves contrast and non-uniform lighting in image
   if (backgroundCorrect) {
-    im <- im %>% SPE(0.0001) 
+    im <- im %>% imagerExtra::SPE(0.0001) 
     if (showPlots) im %>% plot()
   }
   
   # blur image then compute thresholded pixset
   px <- im %>% 
-    isoblur(
+    imager::isoblur(
       sigma = blurSigma
     ) %>% 
-    threshold(
+    imager::threshold(
       thr = threshold, 
       adjust = thresholdAdjust
     ) %>% 
@@ -64,7 +69,7 @@ findWormz <- function(
   
   # fill then clean to fill in some holes inside worms, eliminate some specks
   if (fillNumPix > 0 || cleanNumPix > 0) {
-    px <- px %>% fill(fillNumPix) %>% clean(cleanNumPix)
+    px <- px %>% imager::fill(fillNumPix) %>% imager::clean(cleanNumPix)
   }
   
   if (showPlots) plot(px)
@@ -72,7 +77,7 @@ findWormz <- function(
   candidates <- split_connected(px) %>% 
     purrr::discard(~ sum(.) < keepNumPix) 
   
-  # discard any components touching the 4 image edges
+  # Used to discard any components touching the 4 image edges
   # note: need to be careful about coordinates since image format in imager library is 4 dimensional
   touchesEdge <- function(im) {
     return(any(im[1,,1,1], im[dim(im)[1],,1,1], im[,1,1,1], im[,dim(im)[2],1,1]))
@@ -84,14 +89,16 @@ findWormz <- function(
       numPix = unlist(lapply(candidates, sum)),
       bndryLen = unlist(lapply(candidates, function(x) sum(imager::boundary(x)))),
       touchesEdge = unlist(lapply(candidates, touchesEdge)),
-      worminess = bndryLen / 4 / sqrt(numPix),  # worminess is 1 for a square worm :)
+      # worminess = perimeter / 4 * sqrt(area) is a thinness or spindlyness measure
+      # worminess is normalized to 1 for a square worm (aside from discretization effects)
+      # Smallest possible worminess is circle with value sqrt(pi)/2 (approx 0.89) by the isoperimetric inequality
+      worminess = bndryLen / 4 / sqrt(numPix),  
       include = (worminess > worminess_min_thr & worminess < worminess_max_thr) & !touchesEdge
     )
     
-    final.worms <- candidates[obj.stats$include]
-    final.stats <- obj.stats %>% filter(include)
-    
     print(obj.stats)
+    final.worms <- candidates[obj.stats$include]
+    final.stats <- obj.stats %>% dplyr::filter(include)
     
     if (!is.null(final.worms) && length(final.worms) > 0) {
       
@@ -100,13 +107,11 @@ findWormz <- function(
       cat("Number of final worm candidates:",N,"\n")
       colors <- col2rgb(brewer.pal(min(12, max(N,3)), "Paired")) / 256.0 # color scheme - only has 12
       
-      # superimpose the colored final worm candidates one by one
+      # superimpose the colored final worm candidates one by one on the original image
       for (i in 1:N) {
-        df <- final.worms[[i]]
-        df <- imager::where(df)
-        #df <- which(final.worms[[i]])
+        df <- imager::where(final.worms[[i]])
         xbar <- round(median(df$x))
-        ybar <- df %>% filter(abs(df$x - xbar) <= 1) %>% pull(y) %>% median
+        ybar <- df %>% dplyr::filter(abs(df$x - xbar) <= 1) %>% pull(y) %>% median
 
         im.final <- im.final %>% 
           colorise(final.worms[[i]], colors[,  1 + (i %% ncol(colors))], alpha = 0.6) %>% 

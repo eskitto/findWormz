@@ -18,7 +18,6 @@ analyzeWormz <- function(imageFolder, outputFolder, conditionsMapFile, brightfie
   library(tools)
   library(tiff)
   library(stringr)
-  library(jpeg)
   library(dplyr)
 
   # write the set of parameters in the function call for the record
@@ -74,11 +73,9 @@ analyzeWormz <- function(imageFolder, outputFolder, conditionsMapFile, brightfie
     if (!is.null(results) && !is.null(results$final.worms) && length(results$final.worms) > 0) {
       
       # this stuff is used to create various output filenames
-      #fname_dir      <- dirname(fname)
       fname_basename <- basename(fname)
       fname_root     <- file_path_sans_ext(fname_basename)
       fname_extn     <- file_ext(fname_basename)
-      
       
       # construct filename of fluorescent image data
 
@@ -112,9 +109,8 @@ analyzeWormz <- function(imageFolder, outputFolder, conditionsMapFile, brightfie
         analysis_output <- rbind(analysis_output, new_worm_data)
       }
       
-      # save some of the images for documentation and troubleshooting
-      ims <- results$worm_imgs
-      # save the worm images to output (just final bw (4) and brightfield with color tracing (5))
+      # save some of the images to output folder for documentation and troubleshooting
+      # Normally only save final bw (image 4) and brightfield with color tracing (image 5))
       if (troubleshootMode) {
         start_index = 1
       } else {
@@ -122,7 +118,7 @@ analyzeWormz <- function(imageFolder, outputFolder, conditionsMapFile, brightfie
       }
       for (i in start_index:5) {
         # we save the output files as jpg, not tifs, since they are much smaller
-        imager::save.image(as.cimg(ims[[i]]), file.path(outputFolder, paste0(fname_root, "_", i, ".", "jpg") ) )
+        imager::save.image(as.cimg(results$worm_imgs[[i]]), file.path(outputFolder, paste0(fname_root, "_", i, ".", "jpg") ) )
       }
     }
   }

@@ -9,6 +9,7 @@ fluorescent_channel <- "_ch01"
 rcode_folder <- file.path(".", "R code")
 image_folder <- file.path(".", "input")  # all the tifs are here
 output_folder <- file.path(".", "output")   # relative to wd
+if (!file.exists(output_folder)) dir.create(output_folder)
 
 #the conditions map file should be in the input folder, and called conditions_map.csv
 conditions_map_filename <- file.path(image_folder, "conditions_map.csv")
@@ -26,8 +27,8 @@ analyzeWormz(image_folder, output_folder, conditions_map_filename, brightfield_c
              fillNumPix = 0,
              cleanNumPix = 0,
              keepNumPix = 2000,
-             worminess_min_thr = 1.4,
-             worminess_max_thr = 2.7,
+             worminess_min_thr = 1.4, # discard shapes that are not thin enough
+             worminess_max_thr = 2.7, # discard shapes that are too thin
              blurSigma = 2,
              backgroundCorrect = TRUE,
              showPlots = FALSE)  
