@@ -1,15 +1,26 @@
+#install the necessary packages--this only needs to be done the first time you run the code
+install.packages("imager")
+install.packages("imagerExtra")
+install.packages("tibble")
+install.packages("RColorBrewer")
+install.packages("colorspace")
+install.packages("tiff")
+install.packages("tools")
+install.packages("stringr")
+install.packages("dplyr")
+
 #replace with file path to directory with input, output, and R code folders
 setwd("filepath")
+
+#replace with the name at the end of your brightfield channel and fluorescent channel images
+brightfield_channel <- "_ch00"
+fluorescent_channel <- "_ch01"
 
 #indicate names of three subdirectories: input has all images, output will house analyzed images, R code has findWormz and analyzeWormz
 rcode_folder <- file.path(".", "R code")
 image_folder <- file.path(".", "input")  # all the tifs are here
 output_folder <- file.path(".", "output")   # relative to wd
 if (!file.exists(output_folder)) dir.create(output_folder)
-
-#replace with the name at the end of your brightfield channel and fluorescent channel images
-brightfield_channel <- "_ch00"
-fluorescent_channel <- "_ch01"
 
 #the conditions map file should be in the input folder, and called conditions_map.csv
 conditions_map_filename <- file.path(image_folder, "conditions_map.csv")
