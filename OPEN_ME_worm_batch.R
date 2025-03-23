@@ -41,4 +41,6 @@ analyzeWormz(image_folder, output_folder, conditions_map_filename, brightfield_c
              worminess_max_thr = 2.7, # discard shapes that are too thin
              blurSigma = 2,
              backgroundCorrect = TRUE,
-             showPlots = FALSE)  
+             fillHoles = TRUE,
+             fillHoleMaxPct = 0.10,
+             showPlots = FALSE)

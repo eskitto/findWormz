@@ -10,6 +10,8 @@ analyzeWormz <- function(imageFolder, outputFolder, conditionsMapFile, brightfie
                          worminess_max_thr = 2.05,
                          blurSigma = 2,
                          backgroundCorrect = TRUE,
+                         fillHoles = TRUE,
+                         fillHoleMaxPct = 0.10,
                          showPlots = FALSE) {
   
   library(imager)
@@ -61,6 +63,8 @@ analyzeWormz <- function(imageFolder, outputFolder, conditionsMapFile, brightfie
                          worminess_max_thr,
                          blurSigma,
                          backgroundCorrect,
+                         fillHoles,
+                         fillHoleMaxPct,
                          showPlots)  
     
     # results list from findWormz:
